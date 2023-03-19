@@ -1,8 +1,0 @@
-/gh-pages/
-/.venv/
-/.vscode/
-/monaco-editor-src/
-
-__pycache__
-
-/compiler/app/gtest
