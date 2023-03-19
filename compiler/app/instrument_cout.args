@@ -1,0 +1,3 @@
+-I/home/compiler/app2/include
+-Dcout=__cout__
+-Dcerr=__cerr__

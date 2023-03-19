@@ -1,0 +1,8 @@
+[requires]
+gtest/1.13.0
+
+[options]
+gtest:shared=True
+
+[generators]
+compiler_args

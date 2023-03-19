@@ -1,0 +1,1 @@
+find `g++ -v -x c -E /dev/null 2>&1 | awk '/search starts here:/ { ok=1 } /End of search list./ { ok=0 } ok==1 && /^ / { print $0 }'` -name iostream | head -n 1

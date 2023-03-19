@@ -1,0 +1,19 @@
+#pragma once
+#undef cout
+#undef cerr
+#include </usr/include/c++/11/iostream>
+
+namespace std {
+    inline std::ostream& instrumented_cout(std::ostream &out, const char *filename, int line) 
+    { 
+        if (std::string(filename) == "source.cpp")
+            out << "::instrumented_cout::" << line << "::";
+        return out;
+    }
+}
+
+#define cout __cout__
+#define __cout__ instrumented_cout(std::cout, __FILE__, __LINE__)
+
+#define cerr __cerr__
+#define __cerr__ instrumented_cout(std::cerr, __FILE__, __LINE__)
