@@ -1,5 +1,5 @@
 export default async function*(source_code) {
-    const res = await fetch('//localhost:8001/compile', {
+    const res = await fetch('http://localhost:8001/compile', {
         method: "POST",
         cache: "no-cache", 
         headers: { "Content-Type": "application/json", },
