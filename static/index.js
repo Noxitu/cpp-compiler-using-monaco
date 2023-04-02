@@ -16,6 +16,10 @@ function init_editor()
         automaticLayout: true,
     })
 
+    editor.getModel().updateOptions({
+        tabSize: 4,
+    })
+
     function link_action(keys, action)
     {
         editor.addCommand(keys, () => editor.getAction(action).run())

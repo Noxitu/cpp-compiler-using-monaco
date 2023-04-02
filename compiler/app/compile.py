@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 import subprocess
 import tempfile
@@ -18,7 +19,21 @@ APP_NAME = 'a.out'
 ARG_CACHE = {}
 
 
-def parse_instrumented_cout(result):
+def load_image(path: str):
+    path: Path = Path(path)
+    buffer = path.read_bytes()
+    buffer = base64.b64encode(buffer).decode('ascii')
+
+    mime = {
+        '.png': 'image/png'
+    }.get(path.suffix.lower(), 'image')
+
+    buffer = f'data:{mime};base64,{buffer}'
+    console.log(buffer)
+    return buffer
+
+
+def parse_instrumented(result):
     parsed = {}
 
     def parse(key):
@@ -28,14 +43,14 @@ def parse_instrumented_cout(result):
         for line in lines:
             line, content = line.split('::', 1)
             output += content
-            parsed[int(line)] = f'[{key}] ' + content.split('\n', 1)[0]
+            parsed.setdefault(int(line), []).append(f'[{key}] ' + content)
 
         result[key] = output
 
     parse('stderr')
     parse('stdout')
     result['instrumented_cout'] = [
-        dict(line=key, message=value)
+        dict(line=key, messages=value)
         for key, value in parsed.items()
     ]
 
@@ -102,8 +117,8 @@ class CompileWorkflow:
             '-O3',
             '-DNDEBUG',
             '-Wall', '-Wextra', '-Wpedantic',
-            '@conanbuildinfo.args',
             '@/home/compiler/app2/instrument_cout.args',
+            '@conanbuildinfo.args',
             # '-fcolor-diagnostics',  # clang
             # '-fdiagnostics-color=always',  # gcc
             '-fdiagnostics-format=json',
@@ -111,6 +126,8 @@ class CompileWorkflow:
         ], cwd=cwd)
 
         self._compiled = (result['returncode'] == 0)
+
+        # console.log(result['stderr'])
 
         return self._step(
             'compile',
@@ -124,7 +141,7 @@ class CompileWorkflow:
             '--gtest_output=json',
         ], cwd=cwd)
 
-        parse_instrumented_cout(result)
+        parse_instrumented(result)
 
         console.log(f'Read Test Detail   (@ {self._ms()} ms)')
         try:
@@ -141,6 +158,24 @@ class CompileWorkflow:
             **result
         )
 
+    def _images(self, cwd: Path):
+        imwrite_path = cwd / 'instrumented_imwrite.txt'
+        if imwrite_path.exists():
+            console.log('Imwrite   (@ {self._ms()} ms)')
+
+            images = imwrite_path.read_text().split('\n')
+            images = [
+                dict(line=int(line), name=name, base64src=load_image(path))
+                for line, name, path in zip(*(images[i::3] for i in range(3)))
+            ]
+
+            yield self._step(
+                'imwrite', 
+                images=images
+            )
+
+        return []
+
     def run(self, source_code):
         TEMP_ROOT.mkdir(parents=True, exist_ok=True)
     
@@ -153,6 +188,7 @@ class CompileWorkflow:
 
             if self._compiled:
                 yield self._execute(cwd)
+                yield from self._images(cwd)
 
             console.log(f'Done   (@ {self._ms()} ms)')
 

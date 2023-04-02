@@ -12,8 +12,8 @@ cd "$Root"
 # conan remote disable conancenter
 # conan export ./gtest "gtest/1.13.0@"
 
-# (
-#     cd /tmp && conan install "$Root"  --build=missing
-# )
+# ( cd /tmp && conan install 'opencv/4.5.5@#6e269cd47b943e533827cdea4d498cf1' )
+# ( cd /tmp && conan install "$Root" )
+( cd /tmp && conan install "$Root" --build=missing )
 
 uvicorn main:app --reload --host 0.0.0.0 --port 8001

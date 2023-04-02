@@ -1,8 +1,12 @@
 [requires]
 gtest/1.13.0
+opencv/4.5.5
 
 [options]
 gtest:shared=True
+opencv:shared=True
+opencv:with_gtk=False
+opencv:with_ffmpeg=False
 
 [generators]
 compiler_args

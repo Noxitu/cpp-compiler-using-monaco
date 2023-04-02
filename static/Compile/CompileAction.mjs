@@ -7,14 +7,24 @@ function addCoutAnnotations(editor, step) {
     function* generate() {
         for (const entry of step.instrumented_cout) {
             const NONE = 3
+            const NeverGrowsWhenTypingAtEdges = 1
+
+            const markdown_message = '### Instrumented cout ###\n' + entry.messages.map(m => {
+                return '    ' + m.split('\n').join('\n             ').trim()
+            }).join('\n---\n')
+
             yield {
                 options: {
                     after: {
-                        content: '    ' + entry.message, 
+                        content: '    ' + entry.messages[0].split('\n')[0], 
                         inlineClassName: 'annotationCout',
                         cursorStops: NONE
                     }, 
-                    isWholeLine: true
+                    isWholeLine: true,
+                    stickiness: NeverGrowsWhenTypingAtEdges,
+                    // hoverMessage: {value: entry.messages.join('\n---\n').replaceAll('\n', '\n\n')},
+                    // hoverMessage: {value: '# Hello \n    hi\n    hi\n\n lol'},
+                    hoverMessage: {value: markdown_message},
                 },
                 range: new monaco.Range(entry.line, 1, entry.line, 1e100),
             }
@@ -25,9 +35,83 @@ function addCoutAnnotations(editor, step) {
     oldDecorations = editor.createDecorationsCollection([...generate()])
 }
 
+let oldDecorations2 = null
+
+function addCompileAnnotations(editor, log) {
+    function* generate() {
+        for (const entry of log) {
+            const NONE = 3
+            const NeverGrowsWhenTypingAtEdges = 1
+
+            let {caret} = entry.locations[0]
+
+            const severity = {
+                'error': 'error',
+                'fatal error': 'error',
+                'warning': 'warning',
+            }[entry.kind]
+
+            yield {
+                options: {
+                    after: {
+                        content: '    ' + entry.message, 
+                        inlineClassName: `annotationCompile annotationCompile_${severity}`,
+                        cursorStops: NONE
+                    }, 
+                    className: `annotationLineCompile annotationCompile_${severity}`,
+                    isWholeLine: true,
+                    stickiness: NeverGrowsWhenTypingAtEdges,
+                },
+                range: new monaco.Range(caret.line, 1, caret.line, 1e100),
+            }
+        }
+    }
+    
+    oldDecorations2?.clear()
+    oldDecorations2 = editor.createDecorationsCollection([...generate()])
+}
+
+
+let oldDecorations3 = null
+
+function addImwriteAnnotations(editor, images) {
+    function* generate() {
+        for (const {name, line, base64src} of images) {
+            const NONE = 3
+            const NeverGrowsWhenTypingAtEdges = 1
+
+            const hoverMessage = `### ${name} ###\n<img src="${base64src}">`
+
+            yield {
+                options: {
+                    after: {
+                        content: `    [imwrite] "${name}"`, 
+                        inlineClassName: `annotationImwrite`,
+                        cursorStops: NONE
+                    }, 
+                    isWholeLine: true,
+                    stickiness: NeverGrowsWhenTypingAtEdges,
+                    hoverMessage: {
+                        value: hoverMessage,
+                        supportHtml: true,
+                    }
+                },
+                range: new monaco.Range(line, 1, line, 1e100),
+            }
+        }
+    }
+    
+    oldDecorations3?.clear()
+    oldDecorations3 = editor.createDecorationsCollection([...generate()])
+}
+
 const HANDLERS = {
+    'imwrite': function(editor, step) {
+        console.log(step)
+        addImwriteAnnotations(editor, step.images)
+    },
     'compile': function(editor, step) {
-        const log = JSON.parse(step.stderr)
+        const log = JSON.parse(step.stderr.split('\n')[0])
 
         const markers = []
         
@@ -37,6 +121,7 @@ const HANDLERS = {
         
             const severity = {
                 'error': monaco.MarkerSeverity.Error,
+                'fatal error': monaco.MarkerSeverity.Error,
                 'warning': monaco.MarkerSeverity.Warning,
             }[entry.kind]
 
@@ -61,6 +146,7 @@ const HANDLERS = {
             })
         }
         
+        addCompileAnnotations(editor, log)
         monaco.editor.setModelMarkers(editor.getModel(), 'CompileAction::compile', markers)
     },
     'execute': function(editor, step) {
