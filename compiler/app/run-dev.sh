@@ -16,4 +16,6 @@ cd "$Root"
 # ( cd /tmp && conan install "$Root" )
 ( cd /tmp && conan install "$Root" --build=missing )
 
+export LD_LIBRARY_PATH=/home/compiler/.conan/data/opencv/4.5.5/_/_/build/e22db7dfa4570fdbce29a80d4087d8a0cf2a8ae9/build/Release/lib/
+
 uvicorn main:app --reload --host 0.0.0.0 --port 8001

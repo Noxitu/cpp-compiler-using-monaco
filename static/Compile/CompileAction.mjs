@@ -11,7 +11,8 @@ function addCoutAnnotations(editor, step) {
 
             const markdown_message = '### Instrumented cout ###\n' + entry.messages.map(m => {
                 return '    ' + m.split('\n').join('\n             ').trim()
-            }).join('\n---\n')
+            }).join('\n')
+            // }).join('\n---\n')
 
             yield {
                 options: {
@@ -80,7 +81,7 @@ function addImwriteAnnotations(editor, images) {
             const NONE = 3
             const NeverGrowsWhenTypingAtEdges = 1
 
-            const hoverMessage = `### ${name} ###\n<img src="${base64src}">`
+            const hoverMessage = `<img alt="${name}" src="${base64src}">`
 
             yield {
                 options: {
@@ -190,6 +191,10 @@ const HANDLERS = {
 export default async function(editor)
 {
     console.log('CompileAction')
+    oldDecorations?.clear()
+    oldDecorations2?.clear()
+    oldDecorations3?.clear()
+
     const model = editor.getModel()
     const source_code = model.getValue()
 

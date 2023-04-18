@@ -1,22 +1,16 @@
-export const source_code = `#include <iostream>
-#include <opencv2/imgcodecs.hpp>
+export const source_code = `#include <filesystem>
 #include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include <filesystem>
-
-#define log_var(var) std::cerr << #var << " = " << var << std::endl;
 
 int main()
 {
-    const int unusedVariable = 42;
-
     cv::Mat img = cv::Mat4b::zeros(40, 100);
     cv::circle(img, {20, 20}, 10, {255, 0, 0, 255}, -1);
     cv::circle(img, {50, 20}, 10, {0, 255, 0, 255}, -1);
     cv::circle(img, {80, 20}, 10, {0, 0, 255, 255}, -1);
 
     cv::imwrite("img.png", img);
-    std::cout << "ok";
 }`
 
 export const source_code3 = `#include <iostream>
@@ -72,5 +66,8 @@ PointerAlignment: Left
 InsertBraces: true
 BreakBeforeBraces: Allman
 SeparateDefinitionBlocks: Always
+ColumnLimit: 120
+NamespaceIndentation: All
+FixNamespaceComments: true
 ---
 `

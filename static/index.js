@@ -1,14 +1,21 @@
-import { source_code as CODE } from './files.js'
+import { source_code as DEFAULT_CODE } from './files.js'
 import ClangFormatEditProvider from './ClangFormat/ClangFormatEditProvider.mjs'
 import compile_action from './Compile/CompileAction.mjs'
 import {registerGTestLensProvider} from './Compile/GTestLensProvider.mjs'
+import {configuration} from './config.mjs'
+
+function get_default_code()
+{
+    const code = configuration?.files[configuration?.default]
+    return code !== undefined ? code : DEFAULT_CODE
+}
 
 function init_editor()
 {
     monaco.languages.registerDocumentFormattingEditProvider('cpp', new ClangFormatEditProvider())
 
     const editor = monaco.editor.create(document.getElementById('container'), {
-        value: CODE,
+        value: get_default_code(),
         language: 'cpp',
         scrollBeyondLastLine: false,
         theme: "vs",
@@ -34,7 +41,22 @@ function init_editor()
         run: compile_action,
     })
 
-    
+    if (configuration?.files !== undefined)
+    {
+        let index = 1
+        for (const [key, value] of Object.entries(configuration.files))
+        {
+            editor.addAction({
+                id: `load-code-${index}`,
+                label: `Load code: ${key}`,
+                keybindings: [],
+                run: () => editor.setValue(value),
+            })
+
+            index += 1
+        }
+    }
+
     editor.getAction('compile-and-run').run()
 
     registerGTestLensProvider(editor)
@@ -84,8 +106,62 @@ function init_editor()
     //         }
     //     }
     // })
+
+    create_share_action(editor)
 }
 
+function create_share_action(editor)
+{
+    console.log(configuration)
+    if (configuration.share_webhook !== undefined)
+    {
+        let lastSent = 0
+
+        async function share_my_code() {
+
+            const now = new Date().getTime()
+
+            if (now - lastSent < 15000)
+            {
+                alert('Wait 15s between sharing.')
+                return
+            }
+            
+            lastSent = now
+
+            const model = editor.getModel()
+            const source_code = model.getValue()
+
+            try {
+                const res = await fetch(configuration.share_webhook, {
+                    method: 'POST',
+                    body: source_code
+                })
+
+                if (!res.ok)
+                {
+                    throw Error('Server refused to accept code.')
+                }
+
+                alert('Code shared successfully.')
+            }
+            catch(error)
+            {
+                console.log(error)
+                alert('Failed to share code.')
+            }
+        }
+
+        editor.addAction({
+            id: "share-my-code",
+            label: "Share My Code",
+            keybindings: [],
+            contextMenuGroupId: "9_cutcopypaste",
+            run: () => share_my_code(),
+        })
+    }
+
+}
 
 require.config({ paths: { vs: 'external/monaco-editor/min/vs' } })
 require(['vs/editor/editor.main'], init_editor)
